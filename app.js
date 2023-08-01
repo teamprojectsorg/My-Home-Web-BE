@@ -23,5 +23,5 @@ app.get('/api', (req, res) => {
 
 app.listen(3000, async () => {
     console.log('Listening on port 80:3000')
-    await sequelize.sync({ force: true })
+    await sequelize.sync()
 })

@@ -20,7 +20,7 @@ const UserProfile = db.define('UserProfile', {
     area: DataTypes.TEXT,
     legalId: DataTypes.TEXT,
     legalIdType: DataTypes.ENUM('PASSPORT', 'NATIONAL_ID', 'LICENSE'),
-    phoneNumber: DataTypes.INTEGER
+    phoneNumber: DataTypes.TEXT
 }, {
     tableName: 'UserProfile',
     timestamps: false

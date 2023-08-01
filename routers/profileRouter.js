@@ -46,8 +46,8 @@ router.post('/', async (req, res) => {
             phoneNumber: req.body.phoneNumber
         }
 
-        if (Object.values(data).some(value => value == null)) {
-            return res.status(400).json(queryResult(false, 'Profile Data Incomplete'));
+        if (Object.values(data).some(value => !value)) {
+            return res.status(400).json(queryResult(false, 'Profile Data Incomplete or in Wrong Format'));
         }
 
         if (userProfiles.getAttributes().legalIdType.values.indexOf(data.legalIdType) == -1) {
@@ -84,7 +84,18 @@ router.put('/', async (req, res) => {
             phoneNumber: req.body.phoneNumber
         }
 
-        if (Object.values(data).every(value => value == null)) {
+        Object.keys(data).map((property) => {
+            if (data[property] == undefined) {
+                delete data[property]
+            }
+            else if (!data[property]) {
+                return res.status(400).json(queryResult(false, 'Profile Data in Wrong Format'));
+            }
+        })
+
+        console.log(data)
+
+        if (Object.keys(data).length < 1) {
             return res.status(400).json(queryResult(false, 'No Profile Data Provided'));
         }
 
