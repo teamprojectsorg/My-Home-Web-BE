@@ -1,4 +1,5 @@
 const express = require('express');
+const { validate: validateUUID } = require('uuid')
 
 const queryResult = require('../utils/queryResult');
 const jsonErrorMiddleware = require('../middlewares/jsonErrorMiddleware');
@@ -12,18 +13,27 @@ router.use(authMiddleware);
 router.use(express.json());
 router.use(jsonErrorMiddleware);
 
-router.get('/', async (req, res) => {
+router.get('/:userUUID', async (req, res) => {
     try {
 
-        const userProfile = await userProfiles.findOne({ where: { userId: req.userId } })
+        if (!validateUUID(req.params.userUUID)) return res.status(400).json(queryResult(false, 'Invalid Profile ID'));
 
-        if (!userProfile) return res.status(400).json(queryResult(false, 'Profile Not Registered'));
+        const userProfile = await userProfiles.findOne({ where: { userId: req.params.userUUID } })
+
+        if (!userProfile) return res.status(400).json(queryResult(false, 'Profile Not Found'));
 
         let data = userProfile.get({ plain: true })
-        delete data.userId
         delete data.id
 
-        return res.status(200).json(queryResult(true, 'Request Processed Successfully', data));
+        if (req.userId == req.params.userUUID) {
+            return res.status(200).json(queryResult(true, 'Request Processed Successfully', data));
+        }
+        let masked = {
+            firstName: data.firstName,
+            surname: data.surname
+        }
+
+        return res.status(200).json(queryResult(true, 'Request Processed Successfully', masked));
 
     }
     catch (err) {
@@ -59,7 +69,6 @@ router.post('/', async (req, res) => {
         if (!created) return res.status(400).json(queryResult(false, 'Profile Already Exists'));
 
         let createdProfile = userProfile.get({ plain: true })
-        delete createdProfile.userId
         delete createdProfile.id
 
         return res.status(200).json(queryResult(true, 'Request Processed Successfully', createdProfile));
@@ -93,8 +102,6 @@ router.put('/', async (req, res) => {
             }
         })
 
-        console.log(data)
-
         if (Object.keys(data).length < 1) {
             return res.status(400).json(queryResult(false, 'No Profile Data Provided'));
         }
@@ -103,13 +110,22 @@ router.put('/', async (req, res) => {
             return res.status(400).json(queryResult(false, 'LegalIdType can be PASSPORT, NATIONAL_ID or LICENSE'));
         }
 
-        await userProfiles.update(data, {
+        let [affectedCount, userProfile] = await userProfiles.update(data, {
             where: {
                 userId: req.userId
-            }
+            },
+            returning: true,
+            raw: true
         })
 
-        return res.status(200).json(queryResult(true, 'Request Processed Successfully'));
+        if (affectedCount < 1) {
+            return res.status(400).json(queryResult(false, 'Profile Not Found'));
+        }
+
+        let updatedProfile = userProfile[0]
+        delete updatedProfile.id
+
+        return res.status(200).json(queryResult(true, 'Request Processed Successfully', updatedProfile));
 
     }
     catch (err) {

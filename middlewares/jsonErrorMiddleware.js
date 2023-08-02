@@ -5,8 +5,8 @@ function jsonErrorMiddleware(err, req, res, next) {
         console.error(err);
         return res.status(400).json(queryResult(false, err.message));
     }
-    if (err) {
-        console.log(err)
+    else if (err) {
+        return res.status(500).json(queryResult(false, err.message));
     }
     next();
 }
