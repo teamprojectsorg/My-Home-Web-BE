@@ -9,7 +9,6 @@ const PropertyImage = db.define('PropertyImage', {
         type: DataTypes.UUID,
         defaultValue: DataTypes.UUIDV4
     },
-    name: DataTypes.TEXT,
     description: DataTypes.TEXT,
     url: DataTypes.TEXT
 }, {

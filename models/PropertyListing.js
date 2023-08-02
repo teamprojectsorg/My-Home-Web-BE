@@ -22,16 +22,21 @@ const PropertyListing = db.define('PropertyListing', {
         defaultValue: DataTypes.UUIDV4,
         unique: true
     },
+    isAvailable: DataTypes.BOOLEAN,
     location: DataTypes.TEXT,
     area: DataTypes.TEXT,
+    forRent: DataTypes.BOOLEAN,
+    forSale: DataTypes.BOOLEAN,
+    squareFeet: DataTypes.INTEGER,
     details: DataTypes.TEXT,
+    highlights: DataTypes.ARRAY(DataTypes.TEXT),
     price: DataTypes.INTEGER
 }, {
     tableName: 'PropertyListing',
     timestamps: false
 })
 
-PropertyListing.hasMany(PropertyImage)
-PropertyListing.hasMany(PropertyReview)
+PropertyListing.hasMany(PropertyImage, { onDelete: 'CASCADE' })
+PropertyListing.hasMany(PropertyReview, { onDelete: 'CASCADE' })
 
 module.exports = UserProfile
