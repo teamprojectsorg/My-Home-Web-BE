@@ -1,9 +1,6 @@
 const db = require('../database/sequelize')
 const { DataTypes } = require('sequelize')
 
-const PropertyImage = require('./PropertyImage')
-const PropertyReview = require('./PropertyReview')
-
 const PropertyListing = db.define('PropertyListing', {
     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
     userId: {
@@ -36,7 +33,4 @@ const PropertyListing = db.define('PropertyListing', {
     timestamps: false
 })
 
-PropertyListing.hasMany(PropertyImage, { onDelete: 'CASCADE' })
-PropertyListing.hasMany(PropertyReview, { onDelete: 'CASCADE' })
-
-module.exports = UserProfile
+module.exports = PropertyListing

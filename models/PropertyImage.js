@@ -1,8 +1,6 @@
 const db = require('../database/sequelize')
 const { DataTypes } = require('sequelize')
 
-const PropertyListing = require('./PropertyListing')
-
 const PropertyImage = db.define('PropertyImage', {
     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
     uuid: {
@@ -16,6 +14,4 @@ const PropertyImage = db.define('PropertyImage', {
     timestamps: false
 })
 
-PropertyImage.belongsTo(PropertyListing)
-
-module.exports = UserProfile
+module.exports = PropertyImage
