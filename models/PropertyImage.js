@@ -2,10 +2,10 @@ const db = require('../database/sequelize')
 const { DataTypes } = require('sequelize')
 
 const PropertyImage = db.define('PropertyImage', {
-    id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-    uuid: {
+    id: {
         type: DataTypes.UUID,
-        defaultValue: DataTypes.UUIDV4
+        defaultValue: DataTypes.UUIDV4,
+        primaryKey: true
     },
     description: DataTypes.TEXT,
     url: DataTypes.TEXT

@@ -1,18 +1,16 @@
 const db = require('../database/sequelize')
 const { DataTypes } = require('sequelize')
 
+const User = require('./User')
+
 const UserProfile = db.define('UserProfile', {
-    id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
     userId: {
         type: DataTypes.UUID,
         references: {
-            key: 'id',
-            model: {
-                tableName: 'users',
-                schema: 'auth'
-            }
+            model: User,
+            key: 'id'
         },
-        unique: true
+        primaryKey: true
     },
     firstName: DataTypes.TEXT,
     surname: DataTypes.TEXT,

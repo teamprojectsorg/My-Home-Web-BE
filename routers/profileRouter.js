@@ -23,7 +23,6 @@ router.get('/:userUUID', async (req, res) => {
         if (!userProfile) return res.status(400).json(queryResult(false, 'Profile Not Found'));
 
         let data = userProfile.get({ plain: true })
-        delete data.id
 
         if (req.userId == req.params.userUUID) {
             return res.status(200).json(queryResult(true, 'Request Processed Successfully', data));
@@ -69,7 +68,6 @@ router.post('/', async (req, res) => {
         if (!created) return res.status(400).json(queryResult(false, 'Profile Already Exists'));
 
         let createdProfile = userProfile.get({ plain: true })
-        delete createdProfile.id
 
         return res.status(200).json(queryResult(true, 'Request Processed Successfully', createdProfile));
 
@@ -123,7 +121,6 @@ router.put('/', async (req, res) => {
         }
 
         let updatedProfile = userProfile[0]
-        delete updatedProfile.id
 
         return res.status(200).json(queryResult(true, 'Request Processed Successfully', updatedProfile));
 

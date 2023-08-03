@@ -1,22 +1,11 @@
 const db = require('../database/sequelize')
 const { DataTypes } = require('sequelize')
 
-const PropertyReview = db.define('PropertReview', {
-    id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-    uuid: {
+const PropertyReview = db.define('PropertyReview', {
+    id: {
         type: DataTypes.UUID,
-        defaultValue: DataTypes.UUIDV4
-    },
-    userId: {
-        type: DataTypes.UUID,
-        references: {
-            key: 'id',
-            model: {
-                tableName: 'users',
-                schema: 'auth'
-            }
-        },
-        unique: true
+        defaultValue: DataTypes.UUIDV4,
+        primaryKey: true
     },
     rating: DataTypes.INTEGER,
     reviewTitle: DataTypes.TEXT,

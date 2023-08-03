@@ -1,13 +1,11 @@
 require('dotenv').config();
 const express = require('express')
-const sequelize = require('./database/sequelize')
 
-require('./models/PropertyListing')
-require('./models/PropertyReview')
-require('./models/PropertyImage')
-require('./models/Relations')
+const { syncModels } = require('./models/Relations')
 
 const profileRouter = require('./routers/profileRouter')
+const listingRouter = require('./routers/listingRouter')
+
 const queryResult = require('./utils/queryResult')
 
 const app = express()
@@ -26,8 +24,8 @@ app.get('/api', (req, res) => {
     }
 })
 
-app.listen(3000, async () => {
-    console.log('Listening on port 80:3000')
-    await sequelize.sync({ force: true })
-    require('./models/PropertyListing').create()
+syncModels().then(() => {
+    app.listen(3000, () => {
+        console.log('Listening on port 3000')
+    })
 })

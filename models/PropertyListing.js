@@ -2,22 +2,10 @@ const db = require('../database/sequelize')
 const { DataTypes } = require('sequelize')
 
 const PropertyListing = db.define('PropertyListing', {
-    id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-    userId: {
-        type: DataTypes.UUID,
-        references: {
-            key: 'id',
-            model: {
-                tableName: 'users',
-                schema: 'auth'
-            }
-        },
-        unique: true
-    },
-    uuid: {
+    id: {
         type: DataTypes.UUID,
         defaultValue: DataTypes.UUIDV4,
-        unique: true
+        primaryKey: true
     },
     isAvailable: DataTypes.BOOLEAN,
     location: DataTypes.TEXT,
