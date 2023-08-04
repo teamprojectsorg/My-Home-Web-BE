@@ -13,6 +13,7 @@ const app = express()
 app.set('etag', false);
 
 app.use('/api/profile', profileRouter)
+app.use('/api/listing', listingRouter)
 
 app.get('/api', (req, res) => {
     try {

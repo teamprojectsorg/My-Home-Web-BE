@@ -1,5 +1,6 @@
 const express = require('express');
 const { validate: validateUUID } = require('uuid')
+const { body, matchedData, validationResult } = require('express-validator')
 
 const queryResult = require('../utils/queryResult');
 const jsonErrorMiddleware = require('../middlewares/jsonErrorMiddleware');
@@ -18,21 +19,20 @@ router.get('/:userUUID', async (req, res) => {
 
         if (!validateUUID(req.params.userUUID)) return res.status(400).json(queryResult(false, 'Invalid Profile ID'));
 
-        const userProfile = await userProfiles.findOne({ where: { userId: req.params.userUUID } })
+        let userProfile
+
+        if (req.userId == req.params.userUUID) {
+            userProfile = await userProfiles.findOne({ where: { userId: req.params.userUUID } })
+        }
+        else {
+            userProfile = await userProfiles.findOne({ where: { userId: req.params.userUUID }, attributes: ['userId', 'firstName', 'lastName'] })
+        }
 
         if (!userProfile) return res.status(400).json(queryResult(false, 'Profile Not Found'));
 
         let data = userProfile.get({ plain: true })
 
-        if (req.userId == req.params.userUUID) {
-            return res.status(200).json(queryResult(true, 'Request Processed Successfully', data));
-        }
-        let masked = {
-            firstName: data.firstName,
-            surname: data.surname
-        }
-
-        return res.status(200).json(queryResult(true, 'Request Processed Successfully', masked));
+        return res.status(200).json(queryResult(true, 'Request Processed Successfully', data));
 
     }
     catch (err) {
@@ -41,94 +41,81 @@ router.get('/:userUUID', async (req, res) => {
     }
 });
 
-router.post('/', async (req, res) => {
-    try {
-
-        const data = {
-            userId: req.userId,
-            firstName: req.body.firstName,
-            surname: req.body.surname,
-            residence: req.body.residence,
-            area: req.body.area,
-            legalId: req.body.legalId,
-            legalIdType: req.body.legalIdType,
-            phoneNumber: req.body.phoneNumber
-        }
-
-        if (Object.values(data).some(value => !value)) {
-            return res.status(400).json(queryResult(false, 'Profile Data Incomplete or in Wrong Format'));
-        }
-
-        if (userProfiles.getAttributes().legalIdType.values.indexOf(data.legalIdType) == -1) {
-            return res.status(400).json(queryResult(false, 'LegalIdType can be PASSPORT, NATIONAL_ID or LICENSE'));
-        }
-
-        const [userProfile, created] = await userProfiles.findOrCreate({ where: { userId: req.userId }, defaults: data })
-
-        if (!created) return res.status(400).json(queryResult(false, 'Profile Already Exists'));
-
-        let createdProfile = userProfile.get({ plain: true })
-
-        return res.status(200).json(queryResult(true, 'Request Processed Successfully', createdProfile));
-
-    }
-    catch (err) {
-        console.log(err);
-        return res.status(500).json(queryResult(false, err.message));
-    }
-});
-
-router.put('/', async (req, res) => {
-    try {
-
-        const data = {
-            firstName: req.body.firstName,
-            surname: req.body.surname,
-            residence: req.body.residence,
-            area: req.body.area,
-            legalId: req.body.legalId,
-            legalIdType: req.body.legalIdType,
-            phoneNumber: req.body.phoneNumber
-        }
-
-        Object.keys(data).map((property) => {
-            if (data[property] == undefined) {
-                delete data[property]
+router.post('/',
+    body('firstName').isString().notEmpty().withMessage('First Name is required'),
+    body('surname').isString().notEmpty().withMessage('Surname is required'),
+    body('residence').isString().notEmpty().withMessage('Residence is required'),
+    body('area').isString().notEmpty().withMessage('Area is required'),
+    body('legalId').isString().notEmpty().withMessage('Legal ID is required'),
+    body('legalIdType').isString().notEmpty().isIn(['PASSPORT', 'NATIONAL_ID', 'LICENSE']).withMessage('Legal ID Type must be PASSPORT, NATIONAL_ID, or LICENSE'),
+    body('phoneNumber').isString().notEmpty().withMessage('Phone Number is required'),
+    async (req, res) => {
+        try {
+            let result = validationResult(req)
+            if (!result.isEmpty()) {
+                return res.status(400).json(queryResult(false, 'Invalid Input', result));
             }
-            else if (!data[property]) {
-                return res.status(400).json(queryResult(false, 'Profile Data in Wrong Format'));
+
+            const data = matchedData(req)
+            data.userId = req.userId
+
+            const [userProfile, created] = await userProfiles.findOrCreate({ where: { userId: req.userId }, defaults: data })
+
+            if (!created) return res.status(400).json(queryResult(false, 'Profile Already Exists'));
+
+            let createdProfile = userProfile.get({ plain: true })
+
+            return res.status(200).json(queryResult(true, 'Request Processed Successfully', createdProfile));
+
+        }
+        catch (err) {
+            console.log(err);
+            return res.status(500).json(queryResult(false, err.message));
+        }
+    });
+
+router.put('/',
+    body('firstName').optional().isString().notEmpty().withMessage('First Name is required'),
+    body('surname').optional().isString().notEmpty().withMessage('Surname is required'),
+    body('residence').optional().isString().notEmpty().withMessage('Residence is required'),
+    body('area').optional().isString().notEmpty().withMessage('Area is required'),
+    body('legalId').optional().isString().notEmpty().withMessage('Legal ID is required'),
+    body('legalIdType').optional().isString().notEmpty().isIn(['PASSPORT', 'NATIONAL_ID', 'LICENSE']).withMessage('Legal ID Type must be PASSPORT, NATIONAL_ID, or LICENSE'),
+    body('phoneNumber').optional().isString().notEmpty().withMessage('Phone Number is required'),
+    async (req, res) => {
+        try {
+
+            let result = validationResult(req)
+            if (!result.isEmpty()) {
+                return res.status(400).json(queryResult(false, 'Invalid Input', result));
             }
-        })
 
-        if (Object.keys(data).length < 1) {
-            return res.status(400).json(queryResult(false, 'No Profile Data Provided'));
+            const data = matchedData(req)
+            if (Object.keys(data).length < 1) {
+                return res.status(400).json(queryResult(false, 'No Profile Data Provided'));
+            }
+
+            let [affectedCount, userProfile] = await userProfiles.update(data, {
+                where: {
+                    userId: req.userId
+                },
+                returning: true,
+                raw: true
+            })
+
+            if (affectedCount < 1) {
+                return res.status(400).json(queryResult(false, 'Profile Not Found'));
+            }
+
+            let updatedProfile = userProfile[0]
+
+            return res.status(200).json(queryResult(true, 'Request Processed Successfully', updatedProfile));
+
         }
-
-        if (data.legalIdType && userProfiles.getAttributes().legalIdType.values.indexOf(data.legalIdType) == -1) {
-            return res.status(400).json(queryResult(false, 'LegalIdType can be PASSPORT, NATIONAL_ID or LICENSE'));
+        catch (err) {
+            console.log(err);
+            return res.status(500).json(queryResult(false, err.message));
         }
-
-        let [affectedCount, userProfile] = await userProfiles.update(data, {
-            where: {
-                userId: req.userId
-            },
-            returning: true,
-            raw: true
-        })
-
-        if (affectedCount < 1) {
-            return res.status(400).json(queryResult(false, 'Profile Not Found'));
-        }
-
-        let updatedProfile = userProfile[0]
-
-        return res.status(200).json(queryResult(true, 'Request Processed Successfully', updatedProfile));
-
-    }
-    catch (err) {
-        console.log(err);
-        return res.status(500).json(queryResult(false, err.message));
-    }
-});
+    });
 
 module.exports = router;

@@ -15,7 +15,8 @@ const PropertyListing = db.define('PropertyListing', {
     squareFeet: DataTypes.INTEGER,
     details: DataTypes.TEXT,
     highlights: DataTypes.ARRAY(DataTypes.TEXT),
-    price: DataTypes.INTEGER
+    price: DataTypes.INTEGER,
+    sold: DataTypes.BOOLEAN
 }, {
     tableName: 'PropertyListing',
     timestamps: false
