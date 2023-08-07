@@ -1,4 +1,5 @@
 const express = require('express');
+const supa = require('../supabase')
 const { validate: validateUUID } = require('uuid')
 const { body, matchedData, validationResult } = require('express-validator')
 
@@ -25,7 +26,7 @@ router.get('/:userUUID', async (req, res) => {
             userProfile = await userProfiles.findOne({ where: { userId: req.params.userUUID } })
         }
         else {
-            userProfile = await userProfiles.findOne({ where: { userId: req.params.userUUID }, attributes: ['userId', 'firstName', 'lastName'] })
+            userProfile = await userProfiles.findOne({ where: { userId: req.params.userUUID }, attributes: ['userId', 'firstName', 'lastName', 'avatarUrl'] })
         }
 
         if (!userProfile) return res.status(400).json(queryResult(false, 'Profile Not Found'));
@@ -49,6 +50,7 @@ router.post('/',
     body('legalId').isString().notEmpty().withMessage('Legal ID is required'),
     body('legalIdType').isString().notEmpty().isIn(['PASSPORT', 'NATIONAL_ID', 'LICENSE']).withMessage('Legal ID Type must be PASSPORT, NATIONAL_ID, or LICENSE'),
     body('phoneNumber').isString().notEmpty().withMessage('Phone Number is required'),
+    body('email').isString().notEmpty().isEmail().withMessage('Email is required'),
     async (req, res) => {
         try {
             let result = validationResult(req)
@@ -82,6 +84,7 @@ router.put('/',
     body('legalId').optional().isString().notEmpty().withMessage('Legal ID is required'),
     body('legalIdType').optional().isString().notEmpty().isIn(['PASSPORT', 'NATIONAL_ID', 'LICENSE']).withMessage('Legal ID Type must be PASSPORT, NATIONAL_ID, or LICENSE'),
     body('phoneNumber').optional().isString().notEmpty().withMessage('Phone Number is required'),
+    body('email').optional().isString().notEmpty().isEmail().withMessage('Email is required'),
     async (req, res) => {
         try {
 
@@ -117,5 +120,23 @@ router.put('/',
             return res.status(500).json(queryResult(false, err.message));
         }
     });
+
+router.delete('/', async (req, res) => {
+    try {
+
+        let deleted = await userProfiles.destroy({ where: { userId: req.userId } })
+
+        if (!deleted) return res.status(400).json(queryResult(true, 'Profile Not Found'));
+
+        await supa.auth.admin.deleteUser(req.userId, true)
+
+        return res.status(200).json(queryResult(true, 'Request Processed Successfully'));
+
+    }
+    catch (err) {
+        console.log(err);
+        return res.status(500).json(queryResult(false, err.message));
+    }
+});
 
 module.exports = router;
