@@ -23,7 +23,7 @@ router.get('/:userUUID', async (req, res) => {
         let userProfile
 
         if (req.userId == req.params.userUUID) {
-            userProfile = await userProfiles.findOne({ where: { userId: req.params.userUUID } })
+            userProfile = await userProfiles.findOne({ where: { userId: req.params.userUUID }, attributes: { exclude: ['updatedAt', 'deletedAt'] } })
         }
         else {
             userProfile = await userProfiles.findOne({ where: { userId: req.params.userUUID }, attributes: ['userId', 'firstName', 'lastName', 'avatarUrl'] })
@@ -66,6 +66,8 @@ router.post('/',
             if (!created) return res.status(400).json(queryResult(false, 'Profile Already Exists'));
 
             let createdProfile = userProfile.get({ plain: true })
+            delete createdProfile.deletedAt
+            delete createdProfile.updatedAt
 
             return res.status(200).json(queryResult(true, 'Request Processed Successfully', createdProfile));
 
@@ -102,6 +104,7 @@ router.put('/',
                 where: {
                     userId: req.userId
                 },
+                attributes: { exclude: ['updatedAt', 'deletedAt'] },
                 returning: true,
                 raw: true
             })
@@ -111,6 +114,8 @@ router.put('/',
             }
 
             let updatedProfile = userProfile[0]
+            delete updatedProfile.deletedAt
+            delete updatedProfile.updatedAt
 
             return res.status(200).json(queryResult(true, 'Request Processed Successfully', updatedProfile));
 
@@ -124,9 +129,7 @@ router.put('/',
 router.delete('/', async (req, res) => {
     try {
 
-        let deleted = await userProfiles.destroy({ where: { userId: req.userId } })
-
-        if (!deleted) return res.status(400).json(queryResult(true, 'Profile Not Found'));
+        await userProfiles.destroy({ where: { userId: req.userId }, individualHooks: true })
 
         await supa.auth.admin.deleteUser(req.userId, true)
 
