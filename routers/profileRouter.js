@@ -50,7 +50,7 @@ router.post('/',
     body('legalId').isString().notEmpty().withMessage('Legal ID is required'),
     body('legalIdType').isString().notEmpty().isIn(['PASSPORT', 'NATIONAL_ID', 'LICENSE']).withMessage('Legal ID Type must be PASSPORT, NATIONAL_ID, or LICENSE'),
     body('phoneNumber').isString().notEmpty().withMessage('Phone Number is required'),
-    body('email').isString().notEmpty().isEmail().withMessage('Email is required'),
+    body('email').isEmail().withMessage('Email is required'),
     async (req, res) => {
         try {
             let result = validationResult(req)
@@ -84,7 +84,7 @@ router.put('/',
     body('legalId').optional().isString().notEmpty().withMessage('Legal ID is required'),
     body('legalIdType').optional().isString().notEmpty().isIn(['PASSPORT', 'NATIONAL_ID', 'LICENSE']).withMessage('Legal ID Type must be PASSPORT, NATIONAL_ID, or LICENSE'),
     body('phoneNumber').optional().isString().notEmpty().withMessage('Phone Number is required'),
-    body('email').optional().isString().notEmpty().isEmail().withMessage('Email is required'),
+    body('email').optional().isEmail().withMessage('Email is required'),
     async (req, res) => {
         try {
 
