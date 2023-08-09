@@ -1,6 +1,11 @@
 const express = require('express');
 const supa = require('../supabase')
 const { validate: validateUUID } = require('uuid')
+const sharp = require('sharp')
+const multer = require('multer')
+const path = require("path");
+const fs = require('fs')
+const upload = multer({ dest: 'uploads/', limits: { fileSize: 20971520 } }).single('avatar')
 const { body, matchedData, validationResult } = require('express-validator')
 
 const queryResult = require('../utils/queryResult');
@@ -104,7 +109,6 @@ router.put('/',
                 where: {
                     userId: req.userId
                 },
-                attributes: { exclude: ['updatedAt', 'deletedAt'] },
                 returning: true,
                 raw: true
             })
@@ -126,12 +130,71 @@ router.put('/',
         }
     });
 
+router.post('/uploadavatar', async (req, res) => {
+    try {
+        let userProfile = await userProfiles.findOne({ where: { userId: req.userId }, attributes: ['userId'] })
+
+        if (!userProfile) return res.status(400).json(queryResult(false, 'Profile Not Found'));
+
+        upload(req, res, async (err) => {
+            if (err) return res.status(500).json(queryResult(false, err.message));
+
+            let file = req.file
+
+            const filetypes = /jpeg|jpg|png/;
+            const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+            const mimetype = filetypes.test(file.mimetype);
+
+            if (!(extname && mimetype)) return res.status(400).json(queryResult(false, 'Only JPEG and PNG is supported'));
+
+            let avatar = await sharp('uploads/' + file.filename).toFormat("jpeg", { mozjpeg: true, quality: 60, force: true }).toBuffer()
+
+            const { error } = await supa
+                .storage
+                .from('avatars')
+                .upload('public/' + req.userId, avatar, {
+                    contentType: 'image/jpg',
+                    upsert: true
+                })
+
+            if (error) return res.status(500).json(queryResult(false, error.message));
+
+            const url = supa
+                .storage
+                .from('avatars')
+                .getPublicUrl('public/' + req.userId).data.publicUrl
+
+            let [affectedCount, userProfile] = await userProfiles.update({ avatarUrl: url }, {
+                where: {
+                    userId: req.userId
+                },
+                returning: true,
+                raw: true
+            })
+
+            fs.rmSync('uploads/' + file.filename)
+
+            let updatedProfile = userProfile[0]
+            delete updatedProfile.deletedAt
+            delete updatedProfile.updatedAt
+
+            return res.status(200).json(queryResult(true, 'Request Processed Successfully', updatedProfile));
+        })
+    }
+    catch (err) {
+        console.log(err);
+        return res.status(500).json(queryResult(false, err.message));
+    }
+})
+
 router.delete('/', async (req, res) => {
     try {
 
         await userProfiles.destroy({ where: { userId: req.userId }, individualHooks: true })
 
         await supa.auth.admin.deleteUser(req.userId, true)
+
+        await supa.storage.from('avatars').remove(['public/' + req.userId])
 
         return res.status(200).json(queryResult(true, 'Request Processed Successfully'));
 
