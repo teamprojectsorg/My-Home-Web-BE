@@ -10,13 +10,76 @@ const userProfiles = require('../models/UserProfile');
 const propertyListings = require('../models/PropertyListing')
 const propertyImages = require('../models/PropertyImage')
 const propertyReviews = require('../models/PropertyReview');
-const UserProfile = require('../models/UserProfile');
 
 const router = express.Router();
 
-router.use(authMiddleware);
 router.use(express.json());
 router.use(jsonErrorMiddleware);
+
+router.get('/mylisting', authMiddleware, async (req, res) => {
+    try {
+
+        const listing = await propertyListings.findAll({
+            where: {
+                userId: req.userId
+            },
+            order: [
+                ['createdAt', 'DESC']
+            ],
+            include: [userProfiles]
+        })
+
+        let data = listing.map(listingModel => {
+            property = listingModel.get({ plain: true })
+            property.createdBy = {
+                userId: property.UserProfile.userId,
+                firstName: property.UserProfile.firstName,
+                surname: property.UserProfile.surname
+            }
+            delete property.UserProfile
+            delete property.userId
+            return property
+        })
+
+        return res.status(200).json(queryResult(true, 'Request Processed Successfully', data));
+
+    }
+    catch (err) {
+        console.log(err);
+        return res.status(500).json(queryResult(false, err.message));
+    }
+});
+
+router.get('/', async (req, res) => {
+    try {
+
+        const listing = await propertyListings.findAll({
+            order: [
+                ['createdAt', 'DESC']
+            ],
+            include: [userProfiles]
+        })
+
+        let data = listing.map(listingModel => {
+            property = listingModel.get({ plain: true })
+            property.createdBy = {
+                userId: property.UserProfile.userId,
+                firstName: property.UserProfile.firstName,
+                surname: property.UserProfile.surname
+            }
+            delete property.UserProfile
+            delete property.userId
+            return property
+        })
+
+        return res.status(200).json(queryResult(true, 'Request Processed Successfully', data));
+
+    }
+    catch (err) {
+        console.log(err);
+        return res.status(500).json(queryResult(false, err.message));
+    }
+});
 
 router.get('/:listingUUID', async (req, res) => {
     try {
@@ -27,14 +90,7 @@ router.get('/:listingUUID', async (req, res) => {
             where: {
                 id: req.params.listingUUID
             },
-            include: [
-                {
-                    model: userProfiles
-                },
-                {
-                    model: propertyImages
-                }
-            ]
+            include: [userProfiles]
         })
 
         if (!listing) return res.status(400).json(queryResult(false, 'Listing Not Found'));
@@ -46,6 +102,7 @@ router.get('/:listingUUID', async (req, res) => {
             surname: data.UserProfile.surname
         }
         delete data.UserProfile
+        delete data.userId
 
         return res.status(200).json(queryResult(true, 'Request Processed Successfully', data));
 
@@ -56,12 +113,11 @@ router.get('/:listingUUID', async (req, res) => {
     }
 });
 
-router.post('/', [
+router.post('/', authMiddleware, [
     body('isAvailable').exists().isBoolean(),
     body('location').exists().isString().notEmpty(),
     body('area').exists().isString().notEmpty(),
-    body('forRent').exists().isBoolean(),
-    body('forSale').exists().isBoolean(),
+    body('listingType').isString().notEmpty().isIn(['SALE', 'RENT', 'LEASE']),
     body('squareFeet').exists().isInt({ min: 0 }),
     body('details').exists().isString().notEmpty(),
     body('highlights').isArray().custom((value) => {
@@ -87,7 +143,9 @@ router.post('/', [
             data.userId = req.userId
             data.sold = false
 
-            const createdListing = await propertyListings.create(data)
+            let createdListing = await propertyListings.create(data)
+            createdListing = createdListing.get({ plain: true })
+            delete createdListing.userId
 
             return res.status(200).json(queryResult(true, 'Request Processed Successfully', createdListing));
 
@@ -98,12 +156,11 @@ router.post('/', [
         }
     });
 
-router.put('/:listingUUID', [
+router.put('/:listingUUID', authMiddleware, [
     body('isAvailable').optional().isBoolean(),
     body('location').optional().isString().notEmpty(),
     body('area').optional().isString().notEmpty(),
-    body('forRent').optional().isBoolean(),
-    body('forSale').optional().isBoolean(),
+    body('listingType').isString().notEmpty().isIn(['SALE', 'RENT', 'LEASE']),
     body('squareFeet').optional().isInt({ min: 0 }),
     body('details').optional().isString().notEmpty(),
     body('highlights').optional().isArray().custom((value) => {
@@ -137,8 +194,7 @@ router.put('/:listingUUID', [
                     id: req.params.listingUUID
                 },
                 returning: true,
-                raw: true,
-                include: [UserProfile]
+                raw: true
             })
 
             if (affectedCount < 1) {
@@ -156,5 +212,23 @@ router.put('/:listingUUID', [
             return res.status(500).json(queryResult(false, err.message));
         }
     });
+
+router.delete('/:listingUUID', authMiddleware, async (req, res) => {
+    try {
+
+        if (!validateUUID(req.params.listingUUID)) return res.status(400).json(queryResult(false, 'Invalid Listing ID'));
+
+        let deleted = await propertyListings.destroy({ where: { userId: req.userId, id: req.params.listingUUID } })
+
+        if (!deleted) return res.status(400).json(queryResult(false, 'Listing Not Found'));
+
+        return res.status(200).json(queryResult(true, 'Request Processed Successfully'));
+
+    }
+    catch (err) {
+        console.log(err);
+        return res.status(500).json(queryResult(false, err.message));
+    }
+});
 
 module.exports = router;

@@ -26,7 +26,7 @@ router.get('/:userUUID', async (req, res) => {
             userProfile = await userProfiles.findOne({ where: { userId: req.params.userUUID }, attributes: { exclude: ['updatedAt', 'deletedAt'] } })
         }
         else {
-            userProfile = await userProfiles.findOne({ where: { userId: req.params.userUUID }, attributes: ['userId', 'firstName', 'lastName', 'avatarUrl'] })
+            userProfile = await userProfiles.findOne({ where: { userId: req.params.userUUID }, attributes: ['userId', 'firstName', 'surname', 'avatarUrl', 'createdAt'] })
         }
 
         if (!userProfile) return res.status(400).json(queryResult(false, 'Profile Not Found'));

@@ -10,8 +10,7 @@ const PropertyListing = db.define('PropertyListing', {
     isAvailable: DataTypes.BOOLEAN,
     location: DataTypes.TEXT,
     area: DataTypes.TEXT,
-    forRent: DataTypes.BOOLEAN,
-    forSale: DataTypes.BOOLEAN,
+    listingType: DataTypes.ENUM('RENT', 'SALE', 'LEASE'),
     squareFeet: DataTypes.INTEGER,
     details: DataTypes.TEXT,
     highlights: DataTypes.ARRAY(DataTypes.TEXT),
@@ -19,7 +18,7 @@ const PropertyListing = db.define('PropertyListing', {
     sold: DataTypes.BOOLEAN
 }, {
     tableName: 'PropertyListing',
-    timestamps: false
+    paranoid: true
 })
 
 module.exports = PropertyListing

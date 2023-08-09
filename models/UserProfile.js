@@ -18,10 +18,12 @@ const UserProfile = db.define('UserProfile', {
     area: DataTypes.TEXT,
     legalId: DataTypes.TEXT,
     legalIdType: DataTypes.ENUM('PASSPORT', 'NATIONAL_ID', 'LICENSE'),
-    phoneNumber: DataTypes.TEXT
+    phoneNumber: DataTypes.TEXT,
+    email: DataTypes.TEXT,
+    avatarUrl: DataTypes.TEXT
 }, {
     tableName: 'UserProfile',
-    timestamps: false
+    paranoid: true
 })
 
 module.exports = UserProfile

@@ -12,7 +12,7 @@ const PropertyReview = db.define('PropertyReview', {
     reviewDescription: DataTypes.TEXT
 }, {
     tableName: 'PropertyReview',
-    timestamps: false
+    paranoid: true
 })
 
 module.exports = PropertyReview

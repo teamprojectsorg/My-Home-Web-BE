@@ -11,7 +11,7 @@ const PropertyImage = db.define('PropertyImage', {
     url: DataTypes.TEXT
 }, {
     tableName: 'PropertyImage',
-    timestamps: false
+    paranoid: true
 })
 
 module.exports = PropertyImage
