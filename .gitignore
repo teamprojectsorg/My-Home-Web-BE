@@ -129,6 +129,3 @@ dist
 .yarn/install-state.gz
 .pnp.*
 
-
-# image uploads temp storage
-uploads/

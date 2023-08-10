@@ -194,7 +194,7 @@ router.delete('/', async (req, res) => {
 
         await supa.auth.admin.deleteUser(req.userId, true)
 
-        await supa.storage.from('avatars').remove(['public/' + req.userId])
+        // await supa.storage.from('avatars').remove(['public/' + req.userId])
 
         return res.status(200).json(queryResult(true, 'Request Processed Successfully'));
 
