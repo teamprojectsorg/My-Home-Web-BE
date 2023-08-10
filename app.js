@@ -2,6 +2,7 @@
 const express = require('express')
 const compression = require('compression')
 const cors = require('cors')
+const supabase = require('./supabase')
 
 const { syncModels } = require('./models/Relations')
 
@@ -27,6 +28,14 @@ app.get('/api', (req, res) => {
         console.log(err);
         return res.status(500).json(queryResult(false, err.message));
     }
+})
+
+app.get('/token', async (req, res) => {
+    const { data, error } = await supabase.auth.signInWithPassword({
+        email: 'example@email.com',
+        password: 'example-password',
+    })
+    return res.status(200).json(data)
 })
 
 syncModels().then(() => {
