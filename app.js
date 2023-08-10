@@ -1,5 +1,7 @@
 require('dotenv').config();
 const express = require('express')
+const compression = require('compression')
+const cors = require('cors')
 
 const { syncModels } = require('./models/Relations')
 
@@ -11,6 +13,8 @@ const queryResult = require('./utils/queryResult')
 const app = express()
 
 app.set('etag', false);
+app.use(cors({ origin: '*' }))
+// app.use(compression());
 
 app.use('/api/profile', profileRouter)
 app.use('/api/listing', listingRouter)
