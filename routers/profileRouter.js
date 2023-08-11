@@ -132,14 +132,12 @@ router.put('/',
 
 router.post('/uploadavatar', async (req, res) => {
     try {
-        let userProfile = await userProfiles.findOne({ where: { userId: req.userId }, attributes: ['userId'] })
-
-        if (!userProfile) return res.status(400).json(queryResult(false, 'Profile Not Found'));
-
         upload(req, res, async (err) => {
             if (err) return res.status(500).json(queryResult(false, err.message));
 
             let file = req.file
+
+            if (!file) return res.status(500).json(queryResult(false, 'No File Received'));
 
             const filetypes = /jpeg|jpg|png/;
             const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
@@ -171,6 +169,8 @@ router.post('/uploadavatar', async (req, res) => {
                 returning: true,
                 raw: true
             })
+
+            if (affectedCount < 1) return res.status(400).json(queryResult(false, 'Profile Not Found'));
 
             fs.rmSync('uploads/' + file.filename)
 
