@@ -1,6 +1,12 @@
 const express = require('express');
+const supa = require('../supabase')
 const { validate: validateUUID } = require('uuid')
-const { body, matchedData, validationResult, check } = require('express-validator')
+const sharp = require('sharp')
+const multer = require('multer')
+const path = require("path");
+const fs = require('fs')
+const upload = multer({ dest: 'uploads/', limits: { fileSize: 20971520 } }).array('image')
+const { body, matchedData, validationResult } = require('express-validator')
 
 const queryResult = require('../utils/queryResult');
 const jsonErrorMiddleware = require('../middlewares/jsonErrorMiddleware');
@@ -26,7 +32,8 @@ router.get('/mylisting', authMiddleware, async (req, res) => {
             order: [
                 ['createdAt', 'DESC']
             ],
-            include: [userProfiles]
+            include: [userProfiles, propertyImages],
+            attributes: { exclude: ['updatedAt', 'deletedAt'] }
         })
 
         let data = listing.map(listingModel => {
@@ -36,7 +43,15 @@ router.get('/mylisting', authMiddleware, async (req, res) => {
                 firstName: property.UserProfile.firstName,
                 surname: property.UserProfile.surname
             }
+            property.images = property.PropertyImages.map((image) => {
+                return {
+                    id: image.id,
+                    url: image.url,
+                    description: image.description
+                }
+            })
             delete property.UserProfile
+            delete property.PropertyImages
             delete property.userId
             return property
         })
@@ -57,7 +72,8 @@ router.get('/', async (req, res) => {
             order: [
                 ['createdAt', 'DESC']
             ],
-            include: [userProfiles]
+            include: [userProfiles, propertyImages],
+            attributes: { exclude: ['updatedAt', 'deletedAt'] }
         })
 
         let data = listing.map(listingModel => {
@@ -67,7 +83,15 @@ router.get('/', async (req, res) => {
                 firstName: property.UserProfile.firstName,
                 surname: property.UserProfile.surname
             }
+            property.images = property.PropertyImages.map((image) => {
+                return {
+                    id: image.id,
+                    url: image.url,
+                    description: image.description
+                }
+            })
             delete property.UserProfile
+            delete property.PropertyImages
             delete property.userId
             return property
         })
@@ -90,21 +114,29 @@ router.get('/:listingUUID', async (req, res) => {
             where: {
                 id: req.params.listingUUID
             },
-            include: [userProfiles]
+            include: [userProfiles, propertyImages],
+            attributes: { exclude: ['updatedAt', 'deletedAt'] }
         })
 
-        if (!listing) return res.status(400).json(queryResult(false, 'Listing Not Found'));
+        property = listing.get({ plain: true })
 
-        let data = listing.get({ plain: true })
-        data.createdBy = {
-            userId: data.UserProfile.userId,
-            firstName: data.UserProfile.firstName,
-            surname: data.UserProfile.surname
+        property.createdBy = {
+            userId: property.UserProfile.userId,
+            firstName: property.UserProfile.firstName,
+            surname: property.UserProfile.surname
         }
-        delete data.UserProfile
-        delete data.userId
+        property.images = property.PropertyImages.map((image) => {
+            return {
+                id: image.id,
+                url: image.url,
+                description: image.description
+            }
+        })
+        delete property.UserProfile
+        delete property.PropertyImages
+        delete property.userId
 
-        return res.status(200).json(queryResult(true, 'Request Processed Successfully', data));
+        return res.status(200).json(queryResult(true, 'Request Processed Successfully', property));
 
     }
     catch (err) {
@@ -146,6 +178,8 @@ router.post('/', authMiddleware, [
             let createdListing = await propertyListings.create(data)
             createdListing = createdListing.get({ plain: true })
             delete createdListing.userId
+            delete createdListing.deletedAt
+            delete createdListing.updatedAt
 
             return res.status(200).json(queryResult(true, 'Request Processed Successfully', createdListing));
 
@@ -160,7 +194,7 @@ router.put('/:listingUUID', authMiddleware, [
     body('isAvailable').optional().isBoolean(),
     body('location').optional().isString().notEmpty(),
     body('area').optional().isString().notEmpty(),
-    body('listingType').isString().notEmpty().isIn(['SALE', 'RENT', 'LEASE']),
+    body('listingType').optional().isString().notEmpty().isIn(['SALE', 'RENT', 'LEASE']),
     body('squareFeet').optional().isInt({ min: 0 }),
     body('details').optional().isString().notEmpty(),
     body('highlights').optional().isArray().custom((value) => {
@@ -203,6 +237,8 @@ router.put('/:listingUUID', authMiddleware, [
 
             let updatedListing = listing[0]
             delete updatedListing.userId
+            delete createdListing.deletedAt
+            delete createdListing.updatedAt
 
             return res.status(200).json(queryResult(true, 'Request Processed Successfully', updatedListing));
 
@@ -212,6 +248,102 @@ router.put('/:listingUUID', authMiddleware, [
             return res.status(500).json(queryResult(false, err.message));
         }
     });
+
+router.post('/:listingUUID/image', authMiddleware, async (req, res) => {
+    try {
+        if (!validateUUID(req.params.listingUUID)) return res.status(400).json(queryResult(false, 'Invalid Listing ID'));
+
+        let listing = await propertyListings.findOne({ where: { userId: req.userId, id: req.params.listingUUID } })
+
+        if (!listing) return res.status(400).json(queryResult(false, 'Listing Not Found Or Not Owned By User'));
+
+        upload(req, res, async (err) => {
+            if (err) return res.status(500).json(queryResult(false, err.message));
+
+            let files = req.files
+
+            if (!files || files.length < 1) return res.status(500).json(queryResult(false, 'No File Received'));
+
+            for (const file of req.files) {
+                try {
+                    const filetypes = /jpeg|jpg|png/;
+                    const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+                    const mimetype = filetypes.test(file.mimetype);
+
+                    if (!(extname && mimetype)) {
+                        for (const file of req.files) {
+                            fs.rmSync('uploads/' + file.filename)
+                        }
+                        return res.status(400).json(queryResult(false, 'Only JPEG and PNG is supported'))
+                    }
+                }
+                catch (e) {
+                    console.log(e)
+                }
+            }
+
+
+            res.status(200).json(queryResult(true, 'Image Processing Started'));
+
+            for (const file of req.files) {
+                try {
+                    let image = await propertyImages.create({ propertyListingId: req.params.listingUUID, userId: req.userId }, { raw: true })
+
+                    let avatar = await sharp('uploads/' + file.filename).toFormat("jpeg", { mozjpeg: true, quality: 60, force: true }).toBuffer()
+
+                    const { error } = await supa
+                        .storage
+                        .from('listingImages')
+                        .upload('public/' + image.id, avatar, {
+                            contentType: 'image/jpg',
+                            upsert: true
+                        })
+
+                    if (error) throw error
+
+                    const url = supa
+                        .storage
+                        .from('listingImages')
+                        .getPublicUrl('public/' + image.id).data.publicUrl
+
+                    await propertyImages.update({ url: url, description: req.body[file.originalname] }, {
+                        where: {
+                            id: image.id
+                        }
+                    })
+
+                    fs.rmSync('uploads/' + file.filename)
+                    console.log('done with image', image.id)
+                }
+                catch (e) {
+                    console.log(e)
+                }
+            }
+        })
+    }
+    catch (err) {
+        console.log(err);
+    }
+})
+
+router.delete('/:listingUUID/image/:imageUUID', authMiddleware, async (req, res) => {
+    try {
+
+        if (!validateUUID(req.params.listingUUID)) return res.status(400).json(queryResult(false, 'Invalid Listing ID'));
+        if (!validateUUID(req.params.imageUUID)) return res.status(400).json(queryResult(false, 'Invalid Image ID'));
+
+        let deleted = await propertyListings.destroy({ where: { userId: req.userId, id: req.params.imageUUID, propertyListingId: req.params.listingUUID } })
+
+        if (!deleted) return res.status(400).json(queryResult(false, 'Listing Or Image Not Found'));
+
+        return res.status(200).json(queryResult(true, 'Request Processed Successfully'));
+
+    }
+    catch (err) {
+        console.log(err);
+        return res.status(500).json(queryResult(false, err.message));
+    }
+});
 
 router.delete('/:listingUUID', authMiddleware, async (req, res) => {
     try {
