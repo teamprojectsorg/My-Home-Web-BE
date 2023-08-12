@@ -15,7 +15,8 @@ const PropertyListing = db.define('PropertyListing', {
     details: DataTypes.TEXT,
     highlights: DataTypes.ARRAY(DataTypes.TEXT),
     price: DataTypes.INTEGER,
-    sold: DataTypes.BOOLEAN
+    sold: DataTypes.BOOLEAN,
+    thumbnail: DataTypes.TEXT
 }, {
     tableName: 'PropertyListing',
     paranoid: true

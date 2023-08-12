@@ -249,6 +249,89 @@ router.put('/:listingUUID', authMiddleware, [
         }
     });
 
+router.post('/:listingUUID/thumbnail', authMiddleware, async (req, res) => {
+    try {
+        if (!validateUUID(req.params.listingUUID)) return res.status(400).json(queryResult(false, 'Invalid Listing ID'));
+
+        upload(req, res, async (err) => {
+            if (err) return res.status(500).json(queryResult(false, err.message));
+
+            let files = req.files
+
+            if (!files || files.length < 1) return res.status(500).json(queryResult(false, 'No File Received'));
+
+            for (const file of req.files) {
+                try {
+                    const filetypes = /jpeg|jpg|png/;
+                    const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+                    const mimetype = filetypes.test(file.mimetype);
+
+                    if (!(extname && mimetype)) {
+                        for (const file of req.files) {
+                            fs.rmSync('uploads/' + file.filename)
+                        }
+                        return res.status(400).json(queryResult(false, 'Only JPEG and PNG is supported'))
+                    }
+                }
+                catch (e) {
+                    console.log(e)
+                    return res.status(500).json(queryResult(false, e.message));
+                }
+            }
+
+            for (const file of req.files) {
+                try {
+
+                    let avatar = await sharp('uploads/' + file.filename).toFormat("jpeg", { mozjpeg: true, quality: 60, force: true }).toBuffer()
+
+                    const { error } = await supa
+                        .storage
+                        .from('listingImages')
+                        .upload('public/' + req.params.listingUUID, avatar, {
+                            contentType: 'image/jpg',
+                            upsert: true
+                        })
+
+                    if (error) throw error
+
+                    const url = supa
+                        .storage
+                        .from('listingImages')
+                        .getPublicUrl('public/' + image.id).data.publicUrl
+
+                    let [affectedCount, userProfile] = propertyListings.update({ thumbnail: url }, {
+                        where: {
+                            id: req.params.listingUUID
+                        },
+                        returning: true,
+                        raw: true
+                    })
+
+                    if (affectedCount < 1) return res.status(400).json(queryResult(false, 'Listing Not Found'));
+
+                    fs.rmSync('uploads/' + file.filename)
+
+                    let updatedProfile = userProfile[0]
+                    delete updatedProfile.deletedAt
+                    delete updatedProfile.updatedAt
+
+                    fs.rmSync('uploads/' + file.filename)
+                    console.log('done with image', image.id)
+                    return res.status(200).json(queryResult(true, 'Request Processed Successfully', updatedProfile));
+                }
+                catch (e) {
+                    console.log(e)
+                    return res.status(500).json(queryResult(false, e.message));
+                }
+            }
+        })
+    }
+    catch (err) {
+        console.log(err);
+        return res.status(500).json(queryResult(false, err.message));
+    }
+})
+
 router.post('/:listingUUID/image', authMiddleware, async (req, res) => {
     try {
         if (!validateUUID(req.params.listingUUID)) return res.status(400).json(queryResult(false, 'Invalid Listing ID'));
