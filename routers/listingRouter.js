@@ -239,8 +239,8 @@ router.put('/:listingUUID', authMiddleware, [
 
             let updatedListing = listing[0]
             delete updatedListing.userId
-            delete createdListing.deletedAt
-            delete createdListing.updatedAt
+            delete updatedListing.deletedAt
+            delete updatedListing.updatedAt
 
             return res.status(200).json(queryResult(true, 'Request Processed Successfully', updatedListing));
 
