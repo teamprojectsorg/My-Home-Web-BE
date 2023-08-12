@@ -118,6 +118,8 @@ router.get('/:listingUUID', async (req, res) => {
             attributes: { exclude: ['updatedAt', 'deletedAt'] }
         })
 
+        if (!listing) return res.status(400).json(queryResult(false, 'Listing Not Found'));
+
         property = listing.get({ plain: true })
 
         property.createdBy = {
