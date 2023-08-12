@@ -137,7 +137,7 @@ router.post('/uploadavatar', async (req, res) => {
 
             let file = req.file
 
-            if (!file) return res.status(500).json(queryResult(false, 'No File Received'));
+            if (!file) return res.status(400).json(queryResult(false, 'No File Received'));
 
             const filetypes = /jpeg|jpg|png/;
             const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
@@ -155,7 +155,7 @@ router.post('/uploadavatar', async (req, res) => {
                     upsert: true
                 })
 
-            if (error) return res.status(500).json(queryResult(false, error.message));
+            if (error) return res.status(500).json(queryResult(false, error.message, error));
 
             const url = supa
                 .storage
