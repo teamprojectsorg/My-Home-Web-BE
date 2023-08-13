@@ -187,22 +187,22 @@ router.post('/uploadavatar', async (req, res) => {
     }
 })
 
-router.delete('/', async (req, res) => {
-    try {
+// router.delete('/', async (req, res) => {
+//     try {
 
-        await userProfiles.destroy({ where: { userId: req.userId }, individualHooks: true })
+//         await userProfiles.destroy({ where: { userId: req.userId }, individualHooks: true })
 
-        await supa.auth.admin.deleteUser(req.userId, true)
+//         await supa.auth.admin.deleteUser(req.userId, true)
 
-        // await supa.storage.from('avatars').remove(['public/' + req.userId])
+//         // await supa.storage.from('avatars').remove(['public/' + req.userId])
 
-        return res.status(200).json(queryResult(true, 'Request Processed Successfully'));
+//         return res.status(200).json(queryResult(true, 'Request Processed Successfully'));
 
-    }
-    catch (err) {
-        console.log(err);
-        return res.status(500).json(queryResult(false, err.message));
-    }
-});
+//     }
+//     catch (err) {
+//         console.log(err);
+//         return res.status(500).json(queryResult(false, err.message));
+//     }
+// });
 
 module.exports = router;
