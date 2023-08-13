@@ -194,8 +194,6 @@ router.post('/', authMiddleware, [
             let images = [...data.images]
             delete data.images
 
-
-
             let createdListing = await propertyListings.create(data)
             createdListing = createdListing.get({ plain: true })
             delete createdListing.userId
@@ -203,10 +201,10 @@ router.post('/', authMiddleware, [
             delete createdListing.updatedAt
 
             for (const image of images) {
-                await propertyImages.update({ propertyListingId: createdListing.id, description: image.description }, { where: { id: image.id } })
+                await propertyImages.update({ propertyListingId: createdListing.id, description: image.description }, { where: { id: image.id, propertyListingId: null } })
             }
 
-            return res.status(200).json(queryResult(true, 'Request Processed Successfully', createdListing));
+            return res.status(200).json(queryResult(true, 'Request Processed Successfully'));
 
         }
         catch (err) {
@@ -215,73 +213,73 @@ router.post('/', authMiddleware, [
         }
     });
 
-    // router.post('/', authMiddleware, [
-    //     body('location').exists().isString().notEmpty(),
-    //     body('area').exists().isString().notEmpty(),
-    //     body('listingType').isString().notEmpty().isIn(['SALE', 'RENT', 'LEASE']),
-    //     body('listingCategory').isString().notEmpty().isIn(['LAND', 'HOUSE']),
-    //     body('squareFeet').if(body('listingCategory').isIn(['LAND'])).exists().isInt({ min: 0 }),
-    //     body('bedrooms').if(body('listingCategory').isIn(['HOUSE'])).exists().isInt({ min: 0 }),
-    //     body('details').exists().isString().notEmpty(),
-    //     body('highlights').isArray().custom((value) => {
-    //         if (!Array.isArray(value)) {
-    //             throw new Error('Highlights must be an array.');
-    //         }
-    //         if (value.some((item) => typeof item !== 'string')) {
-    //             throw new Error('Each highlight must be a string.');
-    //         }
-    //         return true;
-    //     }),
-    //     body('images').isArray().custom((value) => {
-    //         if (!Array.isArray(value)) {
-    //             throw new Error('Images must be an array.');
-    //         }
-    //         if (value.some((item) => typeof item !== 'object')) {
-    //             throw new Error('Each image must be an object.');
-    //         }
-    //         if (value.some((item) => !validateUUID(item.id))) {
-    //             throw new Error('Each image must have an id.');
-    //         }
-    //         return true;
-    //     }),
-    //     body('price').exists().isInt({ min: 0 })
-    // ],
-    //     async (req, res) => {
-    //         try {
-    
-    //             let result = validationResult(req)
-    //             if (!result.isEmpty()) {
-    //                 return res.status(400).json(queryResult(false, 'Invalid Input', result));
-    //             }
-    
-    //             const data = matchedData(req)
-    //             data.userId = req.userId
-    //             data.isAvailable = true
-    //             data.sold = false
-    
-    //             let images = [...data.images]
-    //             delete data.images
-    
-    
-    
-    //             let createdListing = await propertyListings.create(data)
-    //             createdListing = createdListing.get({ plain: true })
-    //             delete createdListing.userId
-    //             delete createdListing.deletedAt
-    //             delete createdListing.updatedAt
-    
-    //             for (const image of images) {
-    //                 await propertyImages.update({ propertyListingId: createdListing.id, description: image.description }, { where: { id: image.id } })
-    //             }
-    
-    //             return res.status(200).json(queryResult(true, 'Request Processed Successfully', createdListing));
-    
-    //         }
-    //         catch (err) {
-    //             console.log(err);
-    //             return res.status(500).json(queryResult(false, err.message));
-    //         }
-    //     });
+// router.put('/', authMiddleware, [
+//     body('location').optional().exists().isString().notEmpty(),
+//     body('area').optional().exists().isString().notEmpty(),
+//     body('listingType').optional().isString().notEmpty().isIn(['SALE', 'RENT', 'LEASE']),
+//     body('listingCategory').optional().isString().notEmpty().isIn(['LAND', 'HOUSE']),
+//     body('squareFeet').if(body('listingCategory').isIn(['LAND'])).exists().isInt({ min: 0 }),
+//     body('bedrooms').if(body('listingCategory').isIn(['HOUSE'])).exists().isInt({ min: 0 }),
+//     body('details').optional().exists().isString().notEmpty(),
+//     body('highlights').optional().isArray().custom((value) => {
+//         if (!Array.isArray(value)) {
+//             throw new Error('Highlights must be an array.');
+//         }
+//         if (value.some((item) => typeof item !== 'string')) {
+//             throw new Error('Each highlight must be a string.');
+//         }
+//         return true;
+//     }),
+//     body('images').optional().isArray().custom((value) => {
+//         if (!Array.isArray(value)) {
+//             throw new Error('Images must be an array.');
+//         }
+//         if (value.some((item) => typeof item !== 'object')) {
+//             throw new Error('Each image must be an object.');
+//         }
+//         if (value.some((item) => !validateUUID(item.id))) {
+//             throw new Error('Each image must have an id.');
+//         }
+//         return true;
+//     }),
+//     body('price').optional().exists().isInt({ min: 0 })
+// ],
+//     async (req, res) => {
+//         try {
+
+//             let result = validationResult(req)
+//             if (!result.isEmpty()) {
+//                 return res.status(400).json(queryResult(false, 'Invalid Input', result));
+//             }
+
+//             const data = matchedData(req)
+//             data.userId = req.userId
+//             data.isAvailable = true
+//             data.sold = false
+
+//             let images = [...data.images]
+//             delete data.images
+
+
+
+//             let createdListing = await propertyListings.create(data)
+//             createdListing = createdListing.get({ plain: true })
+//             delete createdListing.userId
+//             delete createdListing.deletedAt
+//             delete createdListing.updatedAt
+
+//             for (const image of images) {
+//                 await propertyImages.update({ propertyListingId: createdListing.id, description: image.description }, { where: { id: image.id } })
+//             }
+
+//             return res.status(200).json(queryResult(true, 'Request Processed Successfully', createdListing));
+
+//         }
+//         catch (err) {
+//             console.log(err);
+//             return res.status(500).json(queryResult(false, err.message));
+//         }
+//     });
 
 // router.put('/:listingUUID', authMiddleware, [
 //     body('isAvailable').optional().isBoolean(),
@@ -342,88 +340,70 @@ router.post('/', authMiddleware, [
 //         }
 //     });
 
-// router.post('/:listingUUID/thumbnail', authMiddleware, async (req, res) => {
-//     try {
-//         if (!validateUUID(req.params.listingUUID)) return res.status(400).json(queryResult(false, 'Invalid Listing ID'));
+router.post('/:listingUUID/thumbnail', authMiddleware, async (req, res) => {
+    try {
+        if (!validateUUID(req.params.listingUUID)) return res.status(400).json(queryResult(false, 'Invalid Listing ID'));
 
-//         upload(req, res, async (err) => {
-//             if (err) return res.status(500).json(queryResult(false, err.message));
+        upload(req, res, async (err) => {
+            if (err) return res.status(500).json(queryResult(false, err.message));
 
-//             let files = req.files
+            let file = req.file
 
-//             if (!files || files.length < 1) return res.status(500).json(queryResult(false, 'No File Received'));
+            if (!file) return res.status(400).json(queryResult(false, 'No File Received'));
 
-//             for (const file of req.files) {
-//                 try {
-//                     const filetypes = /jpeg|jpg|png/;
-//                     const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
-//                     const mimetype = filetypes.test(file.mimetype);
+            const filetypes = /jpeg|jpg|png/;
+            const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+            const mimetype = filetypes.test(file.mimetype);
 
-//                     if (!(extname && mimetype)) {
-//                         for (const file of req.files) {
-//                             fs.rmSync('uploads/' + file.filename)
-//                         }
-//                         return res.status(400).json(queryResult(false, 'Only JPEG and PNG is supported'))
-//                     }
-//                 }
-//                 catch (e) {
-//                     console.log(e)
-//                     return res.status(500).json(queryResult(false, e.message));
-//                 }
-//             }
+            if (!(extname && mimetype)) {
+                fs.rmSync('uploads/' + file.filename)
 
-//             for (const file of req.files) {
-//                 try {
+                return res.status(400).json(queryResult(false, 'Only JPEG and PNG is supported'))
+            }
 
-//                     let avatar = await sharp('uploads/' + file.filename).toFormat("jpeg", { mozjpeg: true, quality: 60, force: true }).toBuffer()
+            let compressed = await sharp('uploads/' + file.filename).toFormat("jpeg", { mozjpeg: true, quality: 60, force: true }).toBuffer()
 
-//                     const { error } = await supa
-//                         .storage
-//                         .from('listingImages')
-//                         .upload('public/' + req.params.listingUUID, avatar, {
-//                             contentType: 'image/jpg',
-//                             upsert: true
-//                         })
+            const { error } = await supa
+                .storage
+                .from('listingImages')
+                .upload('public/' + req.params.listingUUID, compressed, {
+                    contentType: 'image/jpg',
+                })
 
-//                     if (error) throw error
+            if (error) return res.status(500).json(queryResult(false, error.message));
 
-//                     const url = supa
-//                         .storage
-//                         .from('listingImages')
-//                         .getPublicUrl('public/' + image.id).data.publicUrl
+            const url = supa
+                .storage
+                .from('listingImages')
+                .getPublicUrl('public/' + req.params.listingUUID).data.publicUrl
 
-//                     let [affectedCount, userProfile] = propertyListings.update({ thumbnail: url }, {
-//                         where: {
-//                             id: req.params.listingUUID
-//                         },
-//                         returning: true,
-//                         raw: true
-//                     })
+            let [affectedCount, userProfile] = propertyListings.update({ thumbnail: url }, {
+                where: {
+                    id: req.params.listingUUID,
+                    userId: req.userId
+                },
+                returning: true,
+                raw: true
+            })
 
-//                     if (affectedCount < 1) return res.status(400).json(queryResult(false, 'Listing Not Found'));
+            if (affectedCount < 1) return res.status(400).json(queryResult(false, 'Listing Not Found Or Not Owned By User'));
 
-//                     fs.rmSync('uploads/' + file.filename)
+            fs.rmSync('uploads/' + file.filename)
 
-//                     let updatedProfile = userProfile[0]
-//                     delete updatedProfile.deletedAt
-//                     delete updatedProfile.updatedAt
+            let updatedProfile = userProfile[0]
+            delete updatedProfile.deletedAt
+            delete updatedProfile.updatedAt
 
-//                     fs.rmSync('uploads/' + file.filename)
-//                     console.log('done with image', image.id)
-//                     return res.status(200).json(queryResult(true, 'Request Processed Successfully', updatedProfile));
-//                 }
-//                 catch (e) {
-//                     console.log(e)
-//                     return res.status(500).json(queryResult(false, e.message));
-//                 }
-//             }
-//         })
-//     }
-//     catch (err) {
-//         console.log(err);
-//         return res.status(500).json(queryResult(false, err.message));
-//     }
-// })
+            fs.rmSync('uploads/' + file.filename)
+            console.log('done with image', image.id)
+            return res.status(200).json(queryResult(true, 'Request Processed Successfully', updatedProfile));
+        })
+    }
+    catch (err) {
+        console.log(err);
+        return res.status(500).json(queryResult(false, err.message));
+    }
+})
 
 router.post('/image', authMiddleware, async (req, res) => {
     try {
@@ -432,7 +412,7 @@ router.post('/image', authMiddleware, async (req, res) => {
 
             let file = req.file
 
-            if (!file) return res.status(500).json(queryResult(false, 'No File Received'));
+            if (!file) return res.status(400).json(queryResult(false, 'No File Received'));
 
             const filetypes = /jpeg|jpg|png/;
             const extname = filetypes.test(path.extname(file.originalname).toLowerCase());

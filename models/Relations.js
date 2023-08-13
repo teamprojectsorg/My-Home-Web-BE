@@ -5,11 +5,13 @@ const PropertyImage = require('./PropertyImage')
 const PropertyReview = require('./PropertyReview')
 
 UserProfile.hasMany(PropertyListing, { foreignKey: 'userId', onDelete: 'RESTRICT' })
+UserProfile.hasMany(PropertyImage, { foreignKey: 'userId', onDelete: 'RESTRICT' })
 UserProfile.hasMany(PropertyReview, { foreignKey: 'userId', onDelete: 'RESTRICT' })
 PropertyListing.hasMany(PropertyImage, { foreignKey: 'propertyListingId', onDelete: 'RESTRICT' })
 PropertyListing.hasMany(PropertyReview, { foreignKey: 'propertyListingId', onDelete: 'RESTRICT'})
 
 PropertyListing.belongsTo(UserProfile, { foreignKey: 'userId' })
+PropertyImage.belongsTo(UserProfile, { foreignKey: 'userId' })
 PropertyReview.belongsTo(UserProfile, { foreignKey: 'userId' })
 PropertyImage.belongsTo(PropertyListing, { foreignKey: 'propertyListingId' })
 PropertyReview.belongsTo(PropertyListing, { foreignKey: 'propertyListingId' })
