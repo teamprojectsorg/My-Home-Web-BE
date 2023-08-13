@@ -378,7 +378,7 @@ router.post('/:listingUUID/thumbnail', authMiddleware, async (req, res) => {
                 .from('listingImages')
                 .getPublicUrl('public/' + req.params.listingUUID).data.publicUrl
 
-            let [affectedCount, userProfile] = propertyListings.update({ thumbnail: url }, {
+            let [affectedCount, userProfile] = await propertyListings.update({ thumbnail: url }, {
                 where: {
                     id: req.params.listingUUID,
                     userId: req.userId
@@ -390,14 +390,7 @@ router.post('/:listingUUID/thumbnail', authMiddleware, async (req, res) => {
             if (affectedCount < 1) return res.status(400).json(queryResult(false, 'Listing Not Found Or Not Owned By User'));
 
             fs.rmSync('uploads/' + file.filename)
-
-            let updatedProfile = userProfile[0]
-            delete updatedProfile.deletedAt
-            delete updatedProfile.updatedAt
-
-            fs.rmSync('uploads/' + file.filename)
-            console.log('done with image', image.id)
-            return res.status(200).json(queryResult(true, 'Request Processed Successfully', updatedProfile));
+            return res.status(200).json(queryResult(true, 'Request Processed Successfully'));
         })
     }
     catch (err) {
