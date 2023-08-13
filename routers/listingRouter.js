@@ -368,6 +368,7 @@ router.post('/:listingUUID/thumbnail', authMiddleware, async (req, res) => {
                 .from('listingImages')
                 .upload('public/' + req.params.listingUUID, compressed, {
                     contentType: 'image/jpg',
+                    upsert: true
                 })
 
             if (error) return res.status(500).json(queryResult(false, error.message));
