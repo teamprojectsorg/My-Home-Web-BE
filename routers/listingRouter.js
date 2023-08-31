@@ -25,6 +25,8 @@ router.use(jsonErrorMiddleware);
 router.get('/mylisting', authMiddleware, async (req, res) => {
     try {
 
+
+
         const listing = await propertyListings.findAll({
             where: {
                 userId: req.userId
@@ -33,7 +35,9 @@ router.get('/mylisting', authMiddleware, async (req, res) => {
                 ['createdAt', 'DESC']
             ],
             include: [userProfiles, propertyImages],
-            attributes: { exclude: ['updatedAt', 'deletedAt'] }
+            attributes: { exclude: ['updatedAt', 'deletedAt'] },
+            limit: req.query.limit ?? 10,
+            offset: req.query.offset ?? 0
         })
 
         let data = listing.map(listingModel => {
@@ -73,7 +77,9 @@ router.get('/', async (req, res) => {
                 ['createdAt', 'DESC']
             ],
             include: [userProfiles, propertyImages],
-            attributes: { exclude: ['updatedAt', 'deletedAt'] }
+            attributes: { exclude: ['updatedAt', 'deletedAt'] },
+            limit: req.query.limit ?? 10,
+            offset: req.query.offset ?? 0
         })
 
         let data = listing.map(listingModel => {
